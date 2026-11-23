@@ -1,0 +1,80 @@
+# ==========================================
+# Root .gitignore (Production Security)
+# ==========================================
+
+# Environment variables & secrets (NEVER commit to GitHub)
+.env
+.env.*
+!.env.example
+!.env.production.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+!backend/.env.production.example
+frontend/.env.local
+frontend/.env.*.local
+
+# Python & Virtual Environments
+venv/
+backend/venv/
+env/
+ENV/
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Database files
+*.db
+*.sqlite3
+*.sqlite
+backend/*.db
+auth_database.db
+backend/auth_database.db
+auth_database.db-shm
+auth_database.db-wal
+backend/auth_database.db-shm
+backend/auth_database.db-wal
+
+# Node & Frontend dependencies & builds
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Vercel output
+.vercel/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+*.swo
