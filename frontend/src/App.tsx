@@ -161,13 +161,13 @@ function App() {
           const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
           setFirebaseConfirmation(confirmation)
           setMessage(`Firebase verification code sent via SMS to ${result.phone_masked || targetPhone}!`)
-        } catch (fbErr) {
+        } catch (fbErr: unknown) {
+          const errCode = (fbErr as { code?: string; message?: string })?.code || ''
+          const errMsg = (fbErr as { code?: string; message?: string })?.message || ''
           console.warn('Firebase SMS initiation failed, falling back to backend SMS:', fbErr)
           setFirebaseConfirmation(null)
           setMessage(
-            result.phone_masked
-              ? `Check your registered phone (${result.phone_masked}) for the 6-digit OTP code.`
-              : 'Check your registered phone for the 6-digit OTP code.'
+            `Firebase notification: ${errCode || errMsg || 'Carrier or domain issue'}. Fallback OTP code has been printed to your terminal console.`
           )
         }
       } else {
@@ -237,13 +237,13 @@ function App() {
           const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
           setFirebaseConfirmation(confirmation)
           setMessage(`Firebase verification code sent via SMS to ${result.phone_masked || targetPhone}!`)
-        } catch (fbErr) {
+        } catch (fbErr: unknown) {
+          const errCode = (fbErr as { code?: string; message?: string })?.code || ''
+          const errMsg = (fbErr as { code?: string; message?: string })?.message || ''
           console.warn('Firebase SMS initiation failed, falling back to backend SMS:', fbErr)
           setFirebaseConfirmation(null)
           setMessage(
-            result.phone_masked
-              ? `Check your registered phone (${result.phone_masked}) for the 6-digit OTP code.`
-              : 'Check your registered phone for the 6-digit OTP code.'
+            `Firebase notification: ${errCode || errMsg || 'Carrier or domain issue'}. Fallback OTP code has been printed to your terminal console.`
           )
         }
       } else {
