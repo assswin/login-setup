@@ -42,6 +42,7 @@ function App() {
   const [adminUsers, setAdminUsers] = useState<Profile[]>([])
   const [adminLoading, setAdminLoading] = useState(false)
   const [maskedPhone, setMaskedPhone] = useState('')
+  const [maskedEmail, setMaskedEmail] = useState('')
   const [firebaseConfirmation, setFirebaseConfirmation] = useState<ConfirmationResult | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -147,11 +148,17 @@ function App() {
     setError('')
     setMessage('')
     try {
-      const result = await apiRequest<{ message: string; phone?: string; phone_masked?: string }>('/login', {
+      const result = await apiRequest<{
+        message: string
+        email_masked?: string
+        phone?: string
+        phone_masked?: string
+      }>('/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       })
       setOtp('')
+      setMaskedEmail(result.email_masked || '')
       setMaskedPhone(result.phone_masked || '')
       const targetPhone = result.phone || ''
 
@@ -160,22 +167,18 @@ function App() {
           setMessage('Initializing secure Firebase verification...')
           const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
           setFirebaseConfirmation(confirmation)
-          setMessage(`Firebase verification code sent via SMS to ${result.phone_masked || targetPhone}!`)
+          setMessage(`Verification code sent to your email and phone!`)
         } catch (fbErr: unknown) {
-          const errCode = (fbErr as { code?: string; message?: string })?.code || ''
-          const errMsg = (fbErr as { code?: string; message?: string })?.message || ''
-          console.warn('Firebase SMS initiation failed, falling back to backend SMS:', fbErr)
+          console.warn('Firebase SMS fallback to email/console OTP:', fbErr)
           setFirebaseConfirmation(null)
           setMessage(
-            `Firebase notification: ${errCode || errMsg || 'Carrier or domain issue'}. Fallback OTP code has been printed to your terminal console.`
+            `Verification code sent to ${result.email_masked || email}!`
           )
         }
       } else {
         setFirebaseConfirmation(null)
         setMessage(
-          result.phone_masked
-            ? `Check your registered phone (${result.phone_masked}) for the six-digit OTP.`
-            : 'Check your registered phone for the six-digit OTP.'
+          `Verification code sent to ${result.email_masked || email}!`
         )
       }
 
@@ -223,11 +226,17 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      const result = await apiRequest<{ message: string; phone?: string; phone_masked?: string }>('/generate-otp', {
+      const result = await apiRequest<{
+        message: string
+        email_masked?: string
+        phone?: string
+        phone_masked?: string
+      }>('/generate-otp', {
         method: 'POST',
         body: JSON.stringify({ email }),
       })
       setOtp('')
+      setMaskedEmail(result.email_masked || '')
       setMaskedPhone(result.phone_masked || '')
       const targetPhone = result.phone || ''
 
@@ -236,22 +245,18 @@ function App() {
           setMessage('Initializing secure Firebase verification...')
           const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
           setFirebaseConfirmation(confirmation)
-          setMessage(`Firebase verification code sent via SMS to ${result.phone_masked || targetPhone}!`)
+          setMessage(`Verification code sent to your email and phone!`)
         } catch (fbErr: unknown) {
-          const errCode = (fbErr as { code?: string; message?: string })?.code || ''
-          const errMsg = (fbErr as { code?: string; message?: string })?.message || ''
-          console.warn('Firebase SMS initiation failed, falling back to backend SMS:', fbErr)
+          console.warn('Firebase SMS fallback to email/console OTP:', fbErr)
           setFirebaseConfirmation(null)
           setMessage(
-            `Firebase notification: ${errCode || errMsg || 'Carrier or domain issue'}. Fallback OTP code has been printed to your terminal console.`
+            `Verification code sent to ${result.email_masked || email}!`
           )
         }
       } else {
         setFirebaseConfirmation(null)
         setMessage(
-          result.phone_masked
-            ? `Check your registered phone (${result.phone_masked}) for the six-digit OTP.`
-            : 'Check your registered phone for the six-digit OTP.'
+          `Verification code sent to ${result.email_masked || email}!`
         )
       }
 
@@ -374,9 +379,7 @@ function App() {
             >
               {firebaseConfirmation
                 ? '🔥 Firebase SMS Sent'
-                : isFirebaseConfigured()
-                  ? '🔥 Firebase Phone Auth Active'
-                  : '📱 Standard SMS OTP Active'}
+                : '📧 Free Email & SMS OTP Active'}
             </span>
           </div>
 
@@ -542,7 +545,7 @@ function App() {
           {screen === 'loginOtp' && (
             <form onSubmit={handleLoginOtp} className="auth-form">
               <p className="form-copy">
-                Enter the OTP sent to your registered phone {maskedPhone ? `(${maskedPhone})` : ''}
+                Enter the six-digit verification code sent to {maskedEmail || maskedPhone || 'your registered email/phone'}.
               </p>
               <label htmlFor="loginOtp">Six-digit OTP</label>
               <input
@@ -589,7 +592,7 @@ function App() {
           {screen === 'forgotOtp' && (
             <form onSubmit={handleForgotOtp} className="auth-form">
               <p className="form-copy">
-                Enter the OTP sent to your registered phone {maskedPhone ? `(${maskedPhone})` : ''}
+                Enter the six-digit verification code sent to {maskedEmail || maskedPhone || 'your registered email/phone'}.
               </p>
               <label htmlFor="forgotOtp">Six-digit OTP</label>
               <input

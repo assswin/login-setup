@@ -49,7 +49,7 @@ from schemas import (
 )
 
 from dependencies import get_current_user, bearer_scheme
-from email_service import EmailDeliveryError, send_otp_email
+from email_service import EmailDeliveryError, send_otp_email, mask_email
 from sms_service import send_sms_otp, mask_phone
 from firebase_service import verify_firebase_id_token, FirebaseVerificationError
 
@@ -344,10 +344,13 @@ def login_user(
         otp_hash
     )
 
+    # Deliver OTP via Email (100% free) and SMS
+    send_otp_email(existing_user.email, otp, "login")
     send_sms_otp(existing_user.phone, otp, "login")
 
     return {
-        "message": "Password verified. Login OTP sent to registered phone.",
+        "message": f"Verification code sent to {mask_email(existing_user.email)}.",
+        "email_masked": mask_email(existing_user.email),
         "phone": existing_user.phone,
         "phone_masked": mask_phone(existing_user.phone),
         "otp_required": True,
@@ -649,10 +652,13 @@ def generate_otp_api(
         otp_hash
     )
 
+    # Deliver OTP via Email (100% free) and SMS
+    send_otp_email(user.email, otp, "password_reset")
     send_sms_otp(user.phone, otp, "password_reset")
 
     return {
-        "message": "OTP sent to registered phone.",
+        "message": f"OTP sent to {mask_email(user.email)}.",
+        "email_masked": mask_email(user.email),
         "phone": user.phone,
         "phone_masked": mask_phone(user.phone),
         "expires_in": 300

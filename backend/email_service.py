@@ -17,6 +17,17 @@ class EmailDeliveryError(Exception):
     pass
 
 
+def mask_email(email: str) -> str:
+    if not email or "@" not in email:
+        return "****"
+    user_part, domain = email.split("@", 1)
+    if len(user_part) <= 2:
+        masked_user = user_part[0] + "*"
+    else:
+        masked_user = user_part[0] + "*" * (len(user_part) - 2) + user_part[-1]
+    return f"{masked_user}@{domain}"
+
+
 def send_otp_email(recipient: str, otp: str, purpose: str) -> None:
     gmail_address = (os.getenv("GMAIL_ADDRESS") or "").strip()
     gmail_app_password = "".join(
