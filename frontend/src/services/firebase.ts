@@ -8,12 +8,12 @@ import {
 } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDTn53BPiAyud3nFKDtThMLTcDTIsQp69M',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'login-setup-15c40.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'login-setup-15c40',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'login-setup-15c40.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '174080716582',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:174080716582:web:dcb77d0c37ace918d25be7',
 }
 
 export function isFirebaseConfigured(): boolean {

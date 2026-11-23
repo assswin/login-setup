@@ -10,8 +10,8 @@ load_dotenv(BASE_DIR / ".env")
 
 logger = logging.getLogger(__name__)
 
-FIREBASE_WEB_API_KEY = (os.getenv("FIREBASE_WEB_API_KEY") or "").strip()
-FIREBASE_PROJECT_ID = (os.getenv("FIREBASE_PROJECT_ID") or "").strip()
+FIREBASE_WEB_API_KEY = (os.getenv("FIREBASE_WEB_API_KEY") or "AIzaSyDTn53BPiAyud3nFKDtThMLTcDTIsQp69M").strip()
+FIREBASE_PROJECT_ID = (os.getenv("FIREBASE_PROJECT_ID") or "login-setup-15c40").strip()
 
 
 class FirebaseVerificationError(Exception):
