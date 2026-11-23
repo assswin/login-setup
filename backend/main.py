@@ -602,6 +602,8 @@ def admin_toggle_block_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     target_user.is_active = not target_user.is_active
+    if not target_user.is_active:
+        target_user.is_logged_in = False
     db.commit()
     db.refresh(target_user)
 
@@ -609,7 +611,8 @@ def admin_toggle_block_user(
     return {
         "message": f"User {target_user.email} successfully {action}.",
         "user_id": target_user.id,
-        "is_active": target_user.is_active
+        "is_active": target_user.is_active,
+        "is_logged_in": target_user.is_logged_in
     }
 
 

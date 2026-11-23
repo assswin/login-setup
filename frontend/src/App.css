@@ -195,6 +195,16 @@
   color: #1e5631;
 }
 
+.badge-inactive {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e9ecef;
+  color: #6c757d;
+}
+
 .badge-blocked {
   display: inline-block;
   padding: 2px 8px;
