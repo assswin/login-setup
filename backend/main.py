@@ -48,8 +48,7 @@ from schemas import (
 )
 
 from dependencies import get_current_user, bearer_scheme
-from email_service import EmailDeliveryError, send_otp_email, mask_email
-from sms_service import send_sms_otp, mask_phone
+from email_service import EmailDeliveryError, send_otp_email, mask_email, mask_phone
 
 from models.user import User
 from models.password_reset import PasswordResetOTP
@@ -352,9 +351,8 @@ def login_user(
         otp_hash
     )
 
-    # Deliver OTP via Email (100% free) and SMS
+    # Deliver OTP via Email (100% free Gmail SMTP)
     send_otp_email(existing_user.email, otp, "login")
-    send_sms_otp(existing_user.phone, otp, "login")
 
     return {
         "message": f"Verification code sent to {mask_email(existing_user.email)}.",
@@ -651,9 +649,8 @@ def generate_otp_api(
         otp_hash
     )
 
-    # Deliver OTP via Email (100% free) and SMS
+    # Deliver OTP via Email (100% free Gmail SMTP)
     send_otp_email(user.email, otp, "password_reset")
-    send_sms_otp(user.phone, otp, "password_reset")
 
     return {
         "message": f"OTP sent to {mask_email(user.email)}.",

@@ -28,6 +28,12 @@ def mask_email(email: str) -> str:
     return f"{masked_user}@{domain}"
 
 
+def mask_phone(phone: str) -> str:
+    if not phone or len(phone) < 4:
+        return "****"
+    return f"{'*' * (len(phone) - 4)}{phone[-4:]}"
+
+
 def send_otp_email(recipient: str, otp: str, purpose: str) -> None:
     gmail_address = (os.getenv("GMAIL_ADDRESS") or "").strip()
     gmail_app_password = "".join(

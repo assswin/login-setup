@@ -62,7 +62,6 @@ login-page/
 │   ├── database.py              # Engine, connection pooling, and Vercel /tmp detection
 │   ├── dependencies.py          # JWT authentication and user session validation
 │   ├── email_service.py         # Gmail SMTP email delivery with HTML template
-│   ├── sms_service.py           # SMS dispatcher & local console logger
 │   ├── security.py              # Argon2 hashing, JWT signing, SlowAPI limiter
 │   ├── schemas.py               # Pydantic input/output validation models
 │   ├── main.py                  # FastAPI application & API router endpoints
@@ -358,9 +357,6 @@ Refer to [`backend/.env.production.example`](file:///c:/Users/aswin/Desktop/logi
 | `GMAIL_ADDRESS` | Gmail address for sending free Email OTPs | None (Console fallback) |
 | `GMAIL_APP_PASSWORD` | 16-character Google App Password | None (Console fallback) |
 | `CORS_ORIGINS` | Comma-separated allowed origins | Localhost ports |
-| `TWILIO_ACCOUNT_SID` | Optional Twilio SID for SMS fallback | None |
-| `TWILIO_AUTH_TOKEN` | Optional Twilio Auth Token for SMS | None |
-| `TWILIO_PHONE_NUMBER` | Optional Twilio phone number | None |
 
 ---
 
