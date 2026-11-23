@@ -254,57 +254,23 @@ Refer to [`backend/.env.production.example`](file:///c:/Users/aswin/Desktop/logi
 | `TWILIO_ACCOUNT_SID` | Optional Twilio Account SID for live SMS | None (Console fallback) |
 | `TWILIO_AUTH_TOKEN` | Optional Twilio Auth Token for live SMS | None (Console fallback) |
 | `TWILIO_PHONE_NUMBER` | Optional Twilio phone number | None (Console fallback) |
-| `FIREBASE_WEB_API_KEY` | Google Firebase Web API Key for server token validation | None |
-| `FIREBASE_PROJECT_ID` | Firebase Project ID | None |
+| `GMAIL_ADDRESS` | Gmail address for sending free Email OTPs | None (Console fallback) |
+| `GMAIL_APP_PASSWORD` | 16-character Google App Password for Gmail SMTP | None (Console fallback) |
 
 ---
 
-## Firebase Phone OTP Authentication (Free SMS)
+## Free Email OTP Verification (Gmail SMTP)
 
-The application supports **Firebase Phone Authentication** for free, real SMS delivery (10,000 free SMS/month) with invisible reCAPTCHA spam protection:
+The application supports **100% Free Email OTP delivery** (up to 500 emails/day) via standard Gmail SMTP:
 
-### 1. Create Firebase Project
-1. Open the [Firebase Console](https://console.firebase.google.com/) and click **"Add project"**.
-2. Give your project a name (e.g. `login-setup`) and create it.
-
-### 2. Enable Phone Provider
-1. In Firebase Console, go to **Build** $\rightarrow$ **Authentication** $\rightarrow$ **Sign-in method**.
-2. Click **Add new provider** $\rightarrow$ select **Phone**.
-3. Toggle **Enable**.
-4. *(Optional for local testing)* Expand **Phone numbers for testing** and add:
-   - Phone: `+91 99999 99999`
-   - Test Code: `123456`
-5. Click **Save**.
-
-### 3. Add Authorized Domains
-1. In **Authentication** $\rightarrow$ **Settings** $\rightarrow$ **Authorized domains**.
-2. Add:
-   - `localhost`
-   - `127.0.0.1`
-   - `<your-app-name>.vercel.app` (when deploying to Vercel)
-
-### 4. Register Web App & Get Keys
-1. In Firebase Console, go to **Project settings** (gear icon) $\rightarrow$ **General**.
-2. Scroll down to **Your apps** and click the **Web icon (`</>`)**.
-3. Name your app (e.g., `web-client`) and click **Register app**.
-4. Copy the config variables:
-   - In `frontend/.env` (or Vercel environment variables):
-     ```env
-     VITE_FIREBASE_API_KEY=AIzaSy...
-     VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-     VITE_FIREBASE_PROJECT_ID=your-project-id
-     VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-     VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-     VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
-     ```
-   - In `backend/.env` (and Vercel environment variables):
-     ```env
-     FIREBASE_WEB_API_KEY=AIzaSy...
-     FIREBASE_PROJECT_ID=your-project-id
-     ```
-
-### 5. Fallback Protection
-If Firebase keys are not provided or Firebase quota is exceeded, the system automatically falls back to standard backend console/Twilio OTP verification so users are never locked out.
+1. Enable 2-Step Verification on your Google Account: [Google Security Settings](https://myaccount.google.com/security)
+2. Generate a 16-character App Password: [Google App Passwords](https://myaccount.google.com/apppasswords)
+3. Set in `backend/.env`:
+   ```env
+   GMAIL_ADDRESS=your_email@gmail.com
+   GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+   ```
+4. Whenever any user logs in or resets their password, a clean, styled HTML verification code is sent directly to their inbox!
 
 ---
 

@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { apiRequest } from './services/api'
-import {
-  isFirebaseConfigured,
-  sendFirebaseOtp,
-  verifyFirebaseOtpCode,
-} from './services/firebase'
-import type { ConfirmationResult } from 'firebase/auth'
 import './App.css'
 
 type Screen =
@@ -44,7 +38,6 @@ function App() {
   const [adminLoading, setAdminLoading] = useState(false)
   const [maskedPhone, setMaskedPhone] = useState('')
   const [maskedEmail, setMaskedEmail] = useState('')
-  const [firebaseConfirmation, setFirebaseConfirmation] = useState<ConfirmationResult | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -152,7 +145,6 @@ function App() {
       const result = await apiRequest<{
         message: string
         email_masked?: string
-        phone?: string
         phone_masked?: string
       }>('/login', {
         method: 'POST',
@@ -161,29 +153,8 @@ function App() {
       setOtp('')
       setMaskedEmail(result.email_masked || '')
       setMaskedPhone(result.phone_masked || '')
-      const targetPhone = result.phone || ''
-
-      if (isFirebaseConfigured() && targetPhone) {
-        try {
-          setMessage('Initializing secure Firebase verification...')
-          const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
-          setFirebaseConfirmation(confirmation)
-          setMessage(`Verification code sent to your email and phone!`)
-        } catch (fbErr: unknown) {
-          console.warn('Firebase SMS fallback to email/console OTP:', fbErr)
-          setFirebaseConfirmation(null)
-          setMessage(
-            `Verification code sent to ${result.email_masked || email}!`
-          )
-        }
-      } else {
-        setFirebaseConfirmation(null)
-        setMessage(
-          `Verification code sent to ${result.email_masked || email}!`
-        )
-      }
-
       goTo('loginOtp')
+      setMessage(result.message || `Verification code sent to ${result.email_masked || email}!`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -196,25 +167,12 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      if (firebaseConfirmation) {
-        // 1. Verify code with Firebase client
-        const idToken = await verifyFirebaseOtpCode(firebaseConfirmation, otp)
-        // 2. Exchange verified Firebase ID token with FastAPI backend
-        const result = await apiRequest<{ access_token: string }>('/verify-firebase-otp', {
-          method: 'POST',
-          body: JSON.stringify({ id_token: idToken, purpose: 'login' }),
-        })
-        sessionStorage.setItem('access_token', result.access_token)
-        await loadProfile(result.access_token)
-      } else {
-        // Fallback: standard backend OTP verification
-        const result = await apiRequest<{ access_token: string }>('/verify-login-otp', {
-          method: 'POST',
-          body: JSON.stringify({ email, otp }),
-        })
-        sessionStorage.setItem('access_token', result.access_token)
-        await loadProfile(result.access_token)
-      }
+      const result = await apiRequest<{ access_token: string }>('/verify-login-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp }),
+      })
+      sessionStorage.setItem('access_token', result.access_token)
+      await loadProfile(result.access_token)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed')
     } finally {
@@ -230,7 +188,6 @@ function App() {
       const result = await apiRequest<{
         message: string
         email_masked?: string
-        phone?: string
         phone_masked?: string
       }>('/generate-otp', {
         method: 'POST',
@@ -239,29 +196,8 @@ function App() {
       setOtp('')
       setMaskedEmail(result.email_masked || '')
       setMaskedPhone(result.phone_masked || '')
-      const targetPhone = result.phone || ''
-
-      if (isFirebaseConfigured() && targetPhone) {
-        try {
-          setMessage('Initializing secure Firebase verification...')
-          const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
-          setFirebaseConfirmation(confirmation)
-          setMessage(`Verification code sent to your email and phone!`)
-        } catch (fbErr: unknown) {
-          console.warn('Firebase SMS fallback to email/console OTP:', fbErr)
-          setFirebaseConfirmation(null)
-          setMessage(
-            `Verification code sent to ${result.email_masked || email}!`
-          )
-        }
-      } else {
-        setFirebaseConfirmation(null)
-        setMessage(
-          `Verification code sent to ${result.email_masked || email}!`
-        )
-      }
-
       goTo('forgotOtp')
+      setMessage(result.message || `Verification code sent to ${result.email_masked || email}!`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to generate OTP')
     } finally {
@@ -274,28 +210,14 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      if (firebaseConfirmation) {
-        // 1. Verify code with Firebase client
-        const idToken = await verifyFirebaseOtpCode(firebaseConfirmation, otp)
-        // 2. Exchange verified Firebase ID token with FastAPI backend
-        const result = await apiRequest<{ reset_token: string }>('/verify-firebase-otp', {
-          method: 'POST',
-          body: JSON.stringify({ id_token: idToken, purpose: 'reset_password' }),
-        })
-        setResetToken(result.reset_token)
-        sessionStorage.setItem('reset_token', result.reset_token)
-        setNewPassword('')
-        goTo('resetPassword')
-      } else {
-        const result = await apiRequest<{ reset_token: string }>('/verify-otp', {
-          method: 'POST',
-          body: JSON.stringify({ email, otp }),
-        })
-        setResetToken(result.reset_token)
-        sessionStorage.setItem('reset_token', result.reset_token)
-        setNewPassword('')
-        goTo('resetPassword')
-      }
+      const result = await apiRequest<{ reset_token: string }>('/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp }),
+      })
+      setResetToken(result.reset_token)
+      sessionStorage.setItem('reset_token', result.reset_token)
+      setNewPassword('')
+      goTo('resetPassword')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed')
     } finally {
@@ -351,9 +273,6 @@ function App() {
 
   return (
     <main className="auth-page">
-      {/* Invisible reCAPTCHA container for Firebase Phone Authentication */}
-      <div id="recaptcha-container"></div>
-
       {isAuthScreen ? (
         <section className="auth-card" aria-labelledby="auth-title">
           <h1 id="auth-title">
@@ -376,22 +295,12 @@ function App() {
                 fontWeight: 600,
                 padding: '3px 10px',
                 borderRadius: '999px',
-                background: firebaseConfirmation
-                  ? 'rgba(16, 185, 129, 0.12)'
-                  : isFirebaseConfigured()
-                    ? 'rgba(59, 130, 246, 0.12)'
-                    : 'rgba(140, 155, 165, 0.12)',
-                color: firebaseConfirmation
-                  ? '#10b981'
-                  : isFirebaseConfigured()
-                    ? '#3b82f6'
-                    : '#8c9ba5',
+                background: 'rgba(59, 130, 246, 0.12)',
+                color: '#3b82f6',
                 border: '1px solid currentColor',
               }}
             >
-              {firebaseConfirmation
-                ? '🔥 Firebase SMS Sent'
-                : '📧 Free Email & SMS OTP Active'}
+              📧 Free Email OTP Verification Active
             </span>
           </div>
 

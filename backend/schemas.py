@@ -31,8 +31,3 @@ class UserLogin(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
-
-
-class FirebaseOTPVerifyRequest(BaseModel):
-    id_token: str
-    purpose: str = "login"

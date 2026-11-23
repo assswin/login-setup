@@ -44,14 +44,12 @@ from schemas import (
     UserRegister,
     UserResponse,
     UserLogin,
-    TokenResponse,
-    FirebaseOTPVerifyRequest
+    TokenResponse
 )
 
 from dependencies import get_current_user, bearer_scheme
 from email_service import EmailDeliveryError, send_otp_email, mask_email
 from sms_service import send_sms_otp, mask_phone
-from firebase_service import verify_firebase_id_token, FirebaseVerificationError
 
 from models.user import User
 from models.password_reset import PasswordResetOTP
@@ -467,59 +465,6 @@ def verify_login_otp(
         data={"sub": user.email}
     )
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
-
-
-@api_router.post("/verify-firebase-otp")
-@limiter.limit(OTP_LIMIT)
-def verify_firebase_otp_api(
-    request: Request,
-    data: FirebaseOTPVerifyRequest,
-    db: Session = Depends(get_db)
-):
-    try:
-        user_info = verify_firebase_id_token(data.id_token)
-    except FirebaseVerificationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-
-    phone = user_info.get("phoneNumber", "").strip()
-    if not phone:
-        raise HTTPException(status_code=400, detail="Verified Firebase token does not contain a phone number")
-
-    # Match user in database by phone (exact match or last 10 digits)
-    raw_digits = "".join(filter(str.isdigit, phone))
-    last10 = raw_digits[-10:] if len(raw_digits) >= 10 else raw_digits
-
-    user = db.query(User).filter(
-        (User.phone == phone) | (User.phone.endswith(last10))
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No registered account found matching verified phone ({mask_phone(phone)})"
-        )
-
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is deactivated")
-
-    if data.purpose == "reset_password":
-        reset_token = create_password_reset_token(user.email)
-        return {
-            "message": "Firebase phone verification successful. You may now reset your password.",
-            "reset_token": reset_token
-        }
-
-    # Default: Login
-    user.is_logged_in = True
-    db.commit()
-
-    access_token = create_access_token(
-        data={"sub": user.email}
-    )
     return {
         "access_token": access_token,
         "token_type": "bearer"
