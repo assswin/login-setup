@@ -561,6 +561,33 @@ def admin_toggle_block_user(
     }
 
 
+@api_router.delete("/admin/users/{user_id}")
+def admin_delete_user(
+    user_id: int,
+    is_admin_verified: bool = Depends(verify_admin_token),
+    db: Session = Depends(get_db)
+):
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_email = target_user.email
+
+    # Clean up all related foreign key records first
+    db.query(LoginOTP).filter(LoginOTP.user_id == user_id).delete(synchronize_session=False)
+    db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == user_id).delete(synchronize_session=False)
+    db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
+
+    # Permanently delete the user account
+    db.delete(target_user)
+    db.commit()
+
+    return {
+        "message": f"User account {user_email} has been permanently deleted.",
+        "user_id": user_id
+    }
+
+
 # --------------------------------------------------
 # GENERATE PASSWORD RESET OTP
 # --------------------------------------------------

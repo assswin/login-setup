@@ -187,6 +187,7 @@ The application includes a private, decoupled **Admin Portal** for monitoring us
 - **Admin Controls:**
   - **Block Button:** Immediately revokes access and logs the user out.
   - **Unblock Button:** Restores account access.
+  - **Delete Button:** Permanently deletes the user account, cascading delete for all related OTP records, and immediately invalidates any active login session.
   - **Refresh List:** Refreshes real-time user states.
 
 ### Safe Decoupling:

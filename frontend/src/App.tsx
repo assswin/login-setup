@@ -49,6 +49,25 @@ function App() {
     }
   }, [])
 
+  // Live session validation: If on profile screen, periodically verify that the account still exists
+  useEffect(() => {
+    if (screen !== 'profile') return
+    const interval = setInterval(() => {
+      const token = sessionStorage.getItem('access_token')
+      if (token) {
+        apiRequest<Profile>('/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {
+          sessionStorage.removeItem('access_token')
+          setProfile(null)
+          goTo('login')
+          setError('Your account has been deleted or deactivated by an administrator.')
+        })
+      }
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [screen])
+
   async function loadAdminUsers() {
     const token = sessionStorage.getItem('admin_token')
     if (!token) return
@@ -127,6 +146,31 @@ function App() {
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed')
+    }
+  }
+
+  async function handleDeleteUser(userId: number, userEmail: string) {
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete account "${userEmail}"?\n\nThis will remove their profile and invalidate all active login sessions.`
+    )
+    if (!confirmed) return
+
+    const token = sessionStorage.getItem('admin_token')
+    if (!token) return
+    setError('')
+    setMessage('')
+    try {
+      const res = await apiRequest<{ message: string; user_id: number }>(
+        `/admin/users/${userId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      setMessage(res.message)
+      setAdminUsers((prev) => prev.filter((u) => u.id !== userId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user account')
     }
   }
 
@@ -617,23 +661,33 @@ function App() {
                         )}
                       </td>
                       <td>
-                        {u.is_active ? (
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          {u.is_active ? (
+                            <button
+                              type="button"
+                              className="btn-block"
+                              onClick={() => handleToggleBlock(u.id)}
+                            >
+                              Block
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn-unblock"
+                              onClick={() => handleToggleBlock(u.id)}
+                            >
+                              Unblock
+                            </button>
+                          )}
                           <button
                             type="button"
-                            className="btn-block"
-                            onClick={() => handleToggleBlock(u.id)}
+                            className="btn-delete"
+                            onClick={() => handleDeleteUser(u.id, u.email)}
+                            title="Permanently delete user account"
                           >
-                            Block
+                            Delete
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn-unblock"
-                            onClick={() => handleToggleBlock(u.id)}
-                          >
-                            Unblock
-                          </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))

@@ -247,6 +247,23 @@
   background: #229954;
 }
 
+.admin-table button.btn-delete {
+  width: auto;
+  min-height: auto;
+  margin: 0;
+  padding: 6px 12px;
+  background: #dc3545;
+  color: #ffffff;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+
+.admin-table button.btn-delete:hover {
+  background: #bb2d3b;
+}
+
 .role-badge {
   font-size: 12px;
   font-weight: 600;
