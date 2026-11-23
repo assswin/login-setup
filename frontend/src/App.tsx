@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { apiRequest } from './services/api'
+import {
+  isFirebaseConfigured,
+  sendFirebaseOtp,
+  verifyFirebaseOtpCode,
+} from './services/firebase'
+import type { ConfirmationResult } from 'firebase/auth'
 import './App.css'
 
 type Screen =
@@ -36,6 +42,7 @@ function App() {
   const [adminUsers, setAdminUsers] = useState<Profile[]>([])
   const [adminLoading, setAdminLoading] = useState(false)
   const [maskedPhone, setMaskedPhone] = useState('')
+  const [firebaseConfirmation, setFirebaseConfirmation] = useState<ConfirmationResult | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -140,18 +147,39 @@ function App() {
     setError('')
     setMessage('')
     try {
-      const result = await apiRequest<{ message: string; phone_masked?: string }>('/login', {
+      const result = await apiRequest<{ message: string; phone?: string; phone_masked?: string }>('/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       })
       setOtp('')
       setMaskedPhone(result.phone_masked || '')
+      const targetPhone = result.phone || ''
+
+      if (isFirebaseConfigured() && targetPhone) {
+        try {
+          setMessage('Initializing secure Firebase verification...')
+          const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
+          setFirebaseConfirmation(confirmation)
+          setMessage(`Firebase verification code sent via SMS to ${result.phone_masked || targetPhone}!`)
+        } catch (fbErr) {
+          console.warn('Firebase SMS initiation failed, falling back to backend SMS:', fbErr)
+          setFirebaseConfirmation(null)
+          setMessage(
+            result.phone_masked
+              ? `Check your registered phone (${result.phone_masked}) for the 6-digit OTP code.`
+              : 'Check your registered phone for the 6-digit OTP code.'
+          )
+        }
+      } else {
+        setFirebaseConfirmation(null)
+        setMessage(
+          result.phone_masked
+            ? `Check your registered phone (${result.phone_masked}) for the six-digit OTP.`
+            : 'Check your registered phone for the six-digit OTP.'
+        )
+      }
+
       goTo('loginOtp')
-      setMessage(
-        result.phone_masked
-          ? `Check your registered phone (${result.phone_masked}) for the six-digit OTP.`
-          : 'Check your registered phone for the six-digit OTP.'
-      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -164,12 +192,25 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      const result = await apiRequest<{ access_token: string }>('/verify-login-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email, otp }),
-      })
-      sessionStorage.setItem('access_token', result.access_token)
-      await loadProfile(result.access_token)
+      if (firebaseConfirmation) {
+        // 1. Verify code with Firebase client
+        const idToken = await verifyFirebaseOtpCode(firebaseConfirmation, otp)
+        // 2. Exchange verified Firebase ID token with FastAPI backend
+        const result = await apiRequest<{ access_token: string }>('/verify-firebase-otp', {
+          method: 'POST',
+          body: JSON.stringify({ id_token: idToken, purpose: 'login' }),
+        })
+        sessionStorage.setItem('access_token', result.access_token)
+        await loadProfile(result.access_token)
+      } else {
+        // Fallback: standard backend OTP verification
+        const result = await apiRequest<{ access_token: string }>('/verify-login-otp', {
+          method: 'POST',
+          body: JSON.stringify({ email, otp }),
+        })
+        sessionStorage.setItem('access_token', result.access_token)
+        await loadProfile(result.access_token)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed')
     } finally {
@@ -182,18 +223,39 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      const result = await apiRequest<{ message: string; phone_masked?: string }>('/generate-otp', {
+      const result = await apiRequest<{ message: string; phone?: string; phone_masked?: string }>('/generate-otp', {
         method: 'POST',
         body: JSON.stringify({ email }),
       })
       setOtp('')
       setMaskedPhone(result.phone_masked || '')
+      const targetPhone = result.phone || ''
+
+      if (isFirebaseConfigured() && targetPhone) {
+        try {
+          setMessage('Initializing secure Firebase verification...')
+          const confirmation = await sendFirebaseOtp(targetPhone, 'recaptcha-container')
+          setFirebaseConfirmation(confirmation)
+          setMessage(`Firebase verification code sent via SMS to ${result.phone_masked || targetPhone}!`)
+        } catch (fbErr) {
+          console.warn('Firebase SMS initiation failed, falling back to backend SMS:', fbErr)
+          setFirebaseConfirmation(null)
+          setMessage(
+            result.phone_masked
+              ? `Check your registered phone (${result.phone_masked}) for the 6-digit OTP code.`
+              : 'Check your registered phone for the 6-digit OTP code.'
+          )
+        }
+      } else {
+        setFirebaseConfirmation(null)
+        setMessage(
+          result.phone_masked
+            ? `Check your registered phone (${result.phone_masked}) for the six-digit OTP.`
+            : 'Check your registered phone for the six-digit OTP.'
+        )
+      }
+
       goTo('forgotOtp')
-      setMessage(
-        result.phone_masked
-          ? `Check your registered phone (${result.phone_masked}) for the six-digit OTP.`
-          : 'Check your registered phone for the six-digit OTP.'
-      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to generate OTP')
     } finally {
@@ -206,14 +268,28 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      const result = await apiRequest<{ reset_token: string }>('/verify-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email, otp }),
-      })
-      setResetToken(result.reset_token)
-      sessionStorage.setItem('reset_token', result.reset_token)
-      setNewPassword('')
-      goTo('resetPassword')
+      if (firebaseConfirmation) {
+        // 1. Verify code with Firebase client
+        const idToken = await verifyFirebaseOtpCode(firebaseConfirmation, otp)
+        // 2. Exchange verified Firebase ID token with FastAPI backend
+        const result = await apiRequest<{ reset_token: string }>('/verify-firebase-otp', {
+          method: 'POST',
+          body: JSON.stringify({ id_token: idToken, purpose: 'reset_password' }),
+        })
+        setResetToken(result.reset_token)
+        sessionStorage.setItem('reset_token', result.reset_token)
+        setNewPassword('')
+        goTo('resetPassword')
+      } else {
+        const result = await apiRequest<{ reset_token: string }>('/verify-otp', {
+          method: 'POST',
+          body: JSON.stringify({ email, otp }),
+        })
+        setResetToken(result.reset_token)
+        sessionStorage.setItem('reset_token', result.reset_token)
+        setNewPassword('')
+        goTo('resetPassword')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OTP verification failed')
     } finally {
@@ -258,6 +334,9 @@ function App() {
 
   return (
     <main className="auth-page">
+      {/* Invisible reCAPTCHA container for Firebase Phone Authentication */}
+      <div id="recaptcha-container"></div>
+
       {isAuthScreen ? (
         <section className="auth-card" aria-labelledby="auth-title">
           <h1 id="auth-title">
@@ -269,6 +348,37 @@ function App() {
             {screen === 'resetPassword' && 'New password'}
             {screen === 'adminLogin' && 'Admin Verification'}
           </h1>
+
+          <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '3px 10px',
+                borderRadius: '999px',
+                background: firebaseConfirmation
+                  ? 'rgba(16, 185, 129, 0.12)'
+                  : isFirebaseConfigured()
+                    ? 'rgba(59, 130, 246, 0.12)'
+                    : 'rgba(140, 155, 165, 0.12)',
+                color: firebaseConfirmation
+                  ? '#10b981'
+                  : isFirebaseConfigured()
+                    ? '#3b82f6'
+                    : '#8c9ba5',
+                border: '1px solid currentColor',
+              }}
+            >
+              {firebaseConfirmation
+                ? '🔥 Firebase SMS Sent'
+                : isFirebaseConfigured()
+                  ? '🔥 Firebase Phone Auth Active'
+                  : '📱 Standard SMS OTP Active'}
+            </span>
+          </div>
 
           {screen === 'login' && (
             <>
