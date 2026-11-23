@@ -15,6 +15,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     phone: str
     is_active: bool = True
+    is_logged_in: bool = False
     is_admin: bool = False
 
     class Config:

@@ -98,10 +98,20 @@ api_router = APIRouter()
 
 
 # --------------------------------------------------
-# DATABASE TABLE CREATION
+# DATABASE TABLE CREATION & MIGRATION
 # --------------------------------------------------
 
 Base.metadata.create_all(bind=engine)
+
+try:
+    from sqlalchemy import text
+    inspector = inspect(engine)
+    existing_cols = [c["name"] for c in inspector.get_columns("users")]
+    if "is_logged_in" not in existing_cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_logged_in BOOLEAN DEFAULT 0"))
+except Exception:
+    pass
 
 
 # --------------------------------------------------
@@ -447,8 +457,9 @@ def verify_login_otp(
             detail="Invalid login OTP"
         )
 
-    # 7. Mark OTP as used
+    # 7. Mark OTP as used and user as logged in
     otp_record.is_used = True
+    user.is_logged_in = True
     db.commit()
 
     # 8. Generate JWT after successful OTP verification
@@ -503,6 +514,9 @@ def verify_firebase_otp_api(
         }
 
     # Default: Login
+    user.is_logged_in = True
+    db.commit()
+
     access_token = create_access_token(
         data={"sub": user.email}
     )
@@ -513,7 +527,7 @@ def verify_firebase_otp_api(
 
 
 # --------------------------------------------------
-# USER PROFILE
+# USER PROFILE & LOGOUT
 # --------------------------------------------------
 
 @api_router.get("/profile", response_model=UserResponse)
@@ -521,6 +535,16 @@ def get_profile(
     current_user: User = Depends(get_current_user)
 ):
     return current_user
+
+
+@api_router.post("/logout")
+def logout_user(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    current_user.is_logged_in = False
+    db.commit()
+    return {"message": "Logged out successfully"}
 
 
 # --------------------------------------------------

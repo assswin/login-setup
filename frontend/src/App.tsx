@@ -26,6 +26,7 @@ type Profile = {
   email: string
   phone: string
   is_active?: boolean
+  is_logged_in?: boolean
 }
 
 function App() {
@@ -326,7 +327,18 @@ function App() {
     }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    const token = sessionStorage.getItem('access_token')
+    if (token) {
+      try {
+        await apiRequest('/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      } catch {
+        // Continue logout even if network fails
+      }
+    }
     sessionStorage.removeItem('access_token')
     sessionStorage.removeItem('reset_token')
     setProfile(null)
@@ -668,14 +680,15 @@ function App() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Phone</th>
-                  <th>Status</th>
+                  <th>Account</th>
+                  <th>Session</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {adminUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '16px' }}>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '16px' }}>
                       No users registered yet.
                     </td>
                   </tr>
@@ -689,6 +702,24 @@ function App() {
                       <td>
                         <span className={u.is_active ? 'badge-active' : 'badge-blocked'}>
                           {u.is_active ? 'Active' : 'Blocked'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '999px',
+                            background: u.is_logged_in ? 'rgba(16, 185, 129, 0.12)' : 'rgba(140, 155, 165, 0.12)',
+                            color: u.is_logged_in ? '#10b981' : '#8c9ba5',
+                            border: '1px solid currentColor',
+                          }}
+                        >
+                          {u.is_logged_in ? '🟢 Online' : '⚪ Logged Out'}
                         </span>
                       </td>
                       <td>

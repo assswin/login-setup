@@ -24,6 +24,8 @@ class User(Base):
 
     is_active = Column(Boolean, default=True)
 
+    is_logged_in = Column(Boolean, default=False, nullable=False)
+
     is_admin = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(
