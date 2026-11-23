@@ -49,8 +49,7 @@ Featuring secure password hashing with **Argon2**, automated two-factor **Email 
 login-page/
 ├── .github/
 │   └── workflows/
-│       ├── production.yml       # Automated CI test for frontend & backend
-│       └── deploy-pages.yml     # GitHub Pages workflow
+│       └── production.yml       # Automated CI test for frontend & backend
 ├── api/
 │   └── index.py                 # Serverless entrypoint for Vercel deployment
 ├── backend/
