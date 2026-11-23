@@ -15,7 +15,7 @@ Featuring secure password hashing with **Argon2**, automated two-factor **Email 
 5. [Free Email OTP Setup (Gmail SMTP)](#free-email-otp-setup-gmail-smtp)
 6. [How to Change Gmail Password in the Future](#how-to-change-gmail-password-in-the-future)
 7. [Admin Portal & User Monitoring](#admin-portal--user-monitoring)
-8. [Quick Start (Localhost)](#quick-start-localhost)
+8. [How to Run the Project (Step-by-Step)](#how-to-run-the-project-step-by-step)
 9. [Deployment on Vercel](#deployment-on-vercel)
 10. [Environment Variables](#environment-variables)
 11. [Security Architecture](#security-architecture)
@@ -198,41 +198,124 @@ If you ever want to permanently remove the Admin Portal in the future, it will *
 
 ---
 
-## Quick Start (Localhost)
+## How to Run the Project (Step-by-Step)
+
+Follow these clear instructions to set up and run the project on your computer:
 
 ### 1. Prerequisites
-- **Python 3.10+** (Python 3.12 recommended)
-- **Node.js 18+** & **npm**
-- **PowerShell** (Windows) or terminal
+Make sure you have the following installed:
+- **Python 3.10+** (check with: `python --version`)
+- **Node.js 18+** & **npm** (check with: `node -v` and `npm -v`)
+- **Git** (check with: `git --version`)
 
-### 2. One-Click Production Start (Recommended)
-From the project root directory, run:
+---
+
+### 2. First-Time Setup (One-Time Only)
+
+#### Step A: Clone the Repository
+```powershell
+git clone https://github.com/assswin/login-setup.git
+cd login-setup
+```
+
+#### Step B: Set Up the Backend Environment
+Open PowerShell in the project folder:
+```powershell
+# 1. Create a Python virtual environment
+python -m venv backend/venv
+
+# 2. Activate the virtual environment
+.\backend\venv\Scripts\Activate.ps1
+
+# 3. Install required Python packages
+pip install -r backend/requirements.txt
+```
+
+#### Step C: Configure the `.env` File
+Create or verify the file at `backend/.env` with your settings:
+```env
+SECRET_KEY=CciQ_jPWYvPiDCXGGZJuLwaqVxPYVnb0FvaXXYh7OSs
+ADMIN_PASSCODE=735195
+GMAIL_ADDRESS=your_email@gmail.com
+GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+```
+*(See [Free Email OTP Setup](#free-email-otp-setup-gmail-smtp) above for how to generate your 16-character Google App Password).*
+
+#### Step D: Install Frontend Dependencies
+```powershell
+npm --prefix frontend install
+```
+
+---
+
+### 3. Running the Project
+
+You can run the project in either of two ways:
+
+#### Option 1: One-Click Unified Run (Recommended)
+This runs the entire full-stack app on a single port (`http://127.0.0.1:8000`):
+
 ```powershell
 .\start_production.ps1
 ```
-This script automatically:
-1. Compiles the React frontend bundle into `frontend/dist`.
-2. Starts the FastAPI server on port `8000`.
-3. Opens your application at **`http://127.0.0.1:8000`**.
 
-- **Web Application:** `http://127.0.0.1:8000`
-- **Interactive API Documentation (Swagger UI):** `http://127.0.0.1:8000/docs`
-- **Health Check Endpoint:** `http://127.0.0.1:8000/api/health`
+**What this script does automatically:**
+1. Compiles the React TypeScript frontend into production bundle (`frontend/dist`).
+2. Initializes the SQLite database (`auth_database.db`).
+3. Launches the FastAPI backend to serve both the frontend and API endpoints.
 
-### 3. Development Mode (with Hot Reloading)
-If editing frontend UI with live reload:
-1. **Terminal 1 (Backend):**
-   ```powershell
-   cd backend
-   .\venv\Scripts\Activate.ps1
-   uvicorn main:app --reload --port 8000
-   ```
-2. **Terminal 2 (Frontend):**
-   ```powershell
-   cd frontend
-   npm run dev
-   ```
-   Open `http://localhost:5173` (requests proxy automatically to port `8000`).
+Once started, open your browser to:
+- **Web Application:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- **Interactive API Documentation:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Health Check Endpoint:** [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
+
+---
+
+#### Option 2: Development Mode (with Live Hot-Reload)
+Use this if you are actively editing React components or API code:
+
+- **Terminal 1 (Backend API on port 8000):**
+  ```powershell
+  .\backend\venv\Scripts\Activate.ps1
+  uvicorn backend.main:app --reload --port 8000
+  ```
+
+- **Terminal 2 (Frontend Dev Server on port 5173):**
+  ```powershell
+  npm --prefix frontend run dev
+  ```
+  Open **[http://localhost:5173](http://localhost:5173)** in your browser. All API calls to `/api/*` proxy automatically to port 8000.
+
+---
+
+### 4. How to Test App Features
+
+1. **Register a User:**
+   - Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+   - Click **"Create an account"** and enter your Name, Email, Phone, and Password (min 8 chars).
+   - Click **Register**.
+
+2. **Log in with Automated Email OTP:**
+   - Enter your email and password, then click **Log in**.
+   - Check your Gmail inbox for the 6-digit verification code.
+   - Enter the code to view your profile!
+
+3. **Admin Monitoring & User Management:**
+   - On the login screen, click **"🔒 Admin Portal"**.
+   - Enter the passcode: **`735195`**.
+   - View real-time user statuses (**`Active`** / **`Inactive`** / **`Blocked`**).
+   - Use the **Block**, **Unblock**, or **Delete** buttons to manage user accounts.
+
+---
+
+### 5. Stopping and Resetting
+
+- **To Stop the Server:** Press **`Ctrl + C`** in your PowerShell terminal.
+- **To Restart:** Simply run `.\start_production.ps1` again.
+- **To Reset the Database (Clear All Users):**
+  ```powershell
+  python -c "import sqlite3; conn = sqlite3.connect('backend/auth_database.db'); [conn.execute(f'DELETE FROM {t};') for t in ['login_otps', 'password_reset_otps', 'password_reset_tokens', 'users']]; conn.commit(); conn.execute('VACUUM;'); conn.close(); print('Database reset successfully!')"
+  ```
 
 ---
 
