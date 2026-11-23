@@ -7,8 +7,14 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# Database location: environment variable with SQLite default
-DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'auth_database.db'}"
+# Database location: supports Vercel /tmp, PostgreSQL, or local SQLite
+if os.getenv("VERCEL"):
+    DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:////tmp/auth_database.db"
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'auth_database.db'}"
+
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 is_sqlite = DATABASE_URL.startswith("sqlite")
 connect_args = {"check_same_thread": False} if is_sqlite else {}

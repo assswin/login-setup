@@ -268,3 +268,28 @@ Refer to [`backend/.env.production.example`](file:///c:/Users/aswin/Desktop/logi
    - Verified OTPs are immediately burned (`is_used = True`) to prevent replay attacks.
 3. **Repository Protection:**
    - [`.gitignore`](file:///c:/Users/aswin/Desktop/login%20page/.gitignore) strictly prevents `.env`, `*.db`, `venv/`, and `node_modules` from ever being pushed to GitHub.
+
+---
+
+## Deployment on Vercel
+
+This repository is pre-configured for zero-friction deployment on **[Vercel](https://vercel.com)**:
+
+1. **Import Project:**
+   - Log into [Vercel](https://vercel.com) and click **"Add New..."** $\rightarrow$ **"Project"**.
+   - Select your imported GitHub repository: `login-setup`.
+
+2. **Configure Settings:**
+   - **Framework Preset:** Vite (or Other)
+   - **Root Directory:** `./` (default)
+   - **Build Command:** `npm --prefix frontend install && npm --prefix frontend run build` *(auto-loaded from vercel.json)*
+   - **Output Directory:** `frontend/dist` *(auto-loaded from vercel.json)*
+
+3. **Environment Variables (Optional / Recommended):**
+   - `SECRET_KEY`: Any secure random 32+ character string.
+   - `ADMIN_PASSCODE`: `735195` (or your chosen admin code).
+   - `DATABASE_URL`: *(Optional)* If using external PostgreSQL (Neon, Supabase, Railway). If omitted, SQLite operates in `/tmp/auth_database.db`.
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: *(Optional)* For live phone SMS delivery. If omitted, OTPs log to Vercel Function logs.
+
+4. **Deploy:**
+   - Click **Deploy**. Your app will be live at `https://<your-project>.vercel.app`!
